@@ -17,24 +17,37 @@ p_load(
 )
 
 # 1. Directorio ───────────────────────────────────────────────────────────────
-user_paths <- list(
-  "danny"  = "C:/Users/danny/OneDrive/Documentos/Maestria/BD-ML/Taller 2")
+# user_paths <- list(
+#   "danny"  = "C:/Users/danny/OneDrive/Documentos/Maestria/BD-ML/Taller 2")
+# 
+# current_user <- Filter(
+#   function(u) grepl(u, getwd(), ignore.case = TRUE),
+#   names(user_paths)
+# )
+# 
+# if (length(current_user) == 1) {
+#   setwd(user_paths[[current_user]])
+#   cat("✔ Directorio:", getwd(), "\n")
+# } else {
+#   stop("Usuario no reconocido. Agrega tu ruta en user_paths.")
+# }
+cat("Working directory:\n")
+print(getwd())
 
-current_user <- Filter(
-  function(u) grepl(u, getwd(), ignore.case = TRUE),
-  names(user_paths)
-)
-
-if (length(current_user) == 1) {
-  setwd(user_paths[[current_user]])
-  cat("✔ Directorio:", getwd(), "\n")
-} else {
-  stop("Usuario no reconocido. Agrega tu ruta en user_paths.")
+# Crear carpetas de output si no existen
+for (path in c("02_output/01_figures",
+               "02_output/02_tables",
+               "02_output/03_models",
+               "02_output/04_submissions"
+               )) {
+  dir.create(path, recursive = TRUE, showWarnings = FALSE)
 }
 
+
+
 # 2. Correr scripts ───────────────────────────────────────────────────────────
-source("scripts/01_data.R")
-source("scripts/02_models.R")
-source("scripts/03_best_model.R")
-source("scripts/04_predict.R")
-source("scripts/05_mapas.R")
+#source("scripts/01_data.R")
+#source("scripts/02_models.R")
+#source("scripts/03_best_model.R")
+#source("scripts/04_predict.R")
+#source("scripts/05_mapas.R")
