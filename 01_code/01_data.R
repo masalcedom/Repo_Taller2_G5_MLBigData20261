@@ -6,10 +6,10 @@ library(pacman)
 p_load(tidyverse, janitor, skimr, visdat, ggpubr, patchwork)
 
 # ── 1. Cargar datos ───────────────────────────────────────────────────────────
-train_hh  <- read_csv("data/train_hogares.csv")  |> clean_names()
-train_ind <- read_csv("data/train_personas.csv") |> clean_names()
-test_hh   <- read_csv("data/test_hogares.csv")   |> clean_names()
-test_ind  <- read_csv("data/test_personas.csv")  |> clean_names()
+train_hh  <- read_csv("00_data/train_hogares.csv")  |> clean_names()
+train_ind <- read_csv("00_data/train_personas.csv") |> clean_names()
+test_hh   <- read_csv("00_data/test_hogares.csv")   |> clean_names()
+test_ind  <- read_csv("00_data/test_personas.csv")  |> clean_names()
 
 # ── 2. Feature engineering desde personas ────────────────────────────────────
 # Colapsar al nivel hogar usando las variables disponibles en AMBOS sets
@@ -89,7 +89,7 @@ train |>
        x = "Nivel educativo máximo", y = "% de hogares pobres") +
   theme_minimal(base_size = 13)
 
-ggsave("figures/pobreza_por_educacion.png", width = 8, height = 5, dpi = 200)
+ggsave("02_output/01_figures/pobreza_por_educacion.png", width = 8, height = 5, dpi = 200)
 
 # 5c. Distribución de variables clave por estatus
 train |>
@@ -103,14 +103,14 @@ train |>
        fill = "Pobre", x = NULL) +
   theme_minimal(base_size = 12)
 
-ggsave("figures/distribuciones.png", width = 10, height = 6, dpi = 200)
+ggsave("02_output/01_figures/distribuciones.png", width = 10, height = 6, dpi = 200)
 
 # ── 6. Guardar ────────────────────────────────────────────────────────────────
 dir.create("data", showWarnings = FALSE)
 dir.create("figures", showWarnings = FALSE)
 
-write_rds(train, "data/train_clean.rds")
-write_rds(test,  "data/test_clean.rds")
+write_rds(train, "00_data/train_clean.rds")
+write_rds(test,  "00_data/test_clean.rds")
 
 cat("\n✔ Stage 1 completo.\n",
     "  Train:", nrow(train), "hogares |",
