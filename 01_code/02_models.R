@@ -6,8 +6,8 @@
 cat("\n── Stage 2: Modelos ─────────────────────────────────────────\n")
 
 # 0. Cargar datos ─────────────────────────────────────────────────────────────
-train <- read_rds("data/train_clean.rds")
-test  <- read_rds("data/test_clean.rds")
+train <- read_rds("00_data/train_clean.rds")
+test  <- read_rds("00_data/test_clean.rds")
 
 # 1. Preparar features ────────────────────────────────────────────────────────
 set.seed(2005)
@@ -167,7 +167,7 @@ resultados[["RF"]] <- eval_model(rf, val, "Random Forest")
 
 # ── 9. XGBoost ────────────────────────────────────────────────────────────────
 cat("[6/7] XGBoost...\n")
-library(xgboost)
+# library(xgboost)
 cl <- makeCluster(4)
 registerDoParallel(cl)
 
