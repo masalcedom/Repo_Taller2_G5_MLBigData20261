@@ -57,5 +57,5 @@ ggplot(mapa_data) +
     legend.position = "right"
   )
 
-ggsave("figures/mapa_pobreza.png", width = 7, height = 9, dpi = 200)
+ggsave("02_output/01_figures/mapa_pobreza.png", width = 7, height = 9, dpi = 200)
 cat("✔ Mapa guardado en figures/mapa_pobreza.png\n")

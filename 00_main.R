@@ -56,7 +56,7 @@ for (path in c("02_output/01_figures",
 
 # 2. Correr scripts ───────────────────────────────────────────────────────────
 source("01_code/01_data.R")
-source("01_code/02_models.R")
+#source("01_code/02_models.R")
 #source("scripts/03_best_model.R")
 #source("scripts/04_predict.R")
 #source("scripts/05_mapas.R")
