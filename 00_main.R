@@ -5,7 +5,11 @@
 # 0. Limpiar memoria y cargar paquetes ────────────────────────────────────────
 rm(list = ls())
 
+install.packages("doParallel")
+library(doParallel)
+
 library(pacman)
+
 p_load(
   rio, tidyverse, janitor, skimr,
   visdat, corrplot, ggpubr, patchwork,

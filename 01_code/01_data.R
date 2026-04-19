@@ -54,6 +54,7 @@ train <- train_hh |>
 test <- test_hh |>
   left_join(ind_features_test, by = "id")
 
+
 # ── 4. Limpiar NAs ────────────────────────────────────────────────────────────
 # Imputar medianas en numéricas, "Desconocido" en categóricas
 train <- train |>

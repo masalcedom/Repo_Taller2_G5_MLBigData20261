@@ -10,7 +10,7 @@ train <- read_rds("data/train_clean.rds")
 test  <- read_rds("data/test_clean.rds")
 
 # 1. Preparar features ────────────────────────────────────────────────────────
-set.seed(42)
+set.seed(2005)
 
 drop_cols <- c("id", "pobre", "fex_c", "fex_dpto")
 features  <- setdiff(names(train), drop_cols)
@@ -19,6 +19,7 @@ train_model <- train |>
   select(all_of(c(features, "pobre"))) |>
   mutate(across(where(is.character), ~as.integer(as.factor(.))))
 
+
 idx <- createDataPartition(train_model$pobre, p = 0.8, list = FALSE)
 tr  <- train_model[ idx, ]
 val <- train_model[-idx, ]
@@ -26,6 +27,7 @@ val <- train_model[-idx, ]
 cat("✔ Split: train =", nrow(tr), "| val =", nrow(val), "\n")
 
 # 2. Control de CV + ROSE ─────────────────────────────────────────────────────
+
 ctrl <- trainControl(
   method          = "cv",
   number          = 5,
@@ -55,6 +57,7 @@ resultados <- list()
 # ── 4. LPM ────────────────────────────────────────────────────────────────────
 cat("\n[1/7] LPM...\n")
 tr_lpm    <- tr |> mutate(pobre_num = as.integer(pobre == "yes"))
+test_lmp  <- val |> mutate(pobre_num = as.integer(pobre == "yes"))
 lpm       <- lm(pobre_num ~ . - pobre, data = tr_lpm)
 lpm_preds <- factor(
   ifelse(predict(lpm, val) > 0.5, "yes", "no"),
@@ -84,28 +87,66 @@ logit <- train(
 resultados[["Logit"]] <- eval_model(logit, val, "Logit")
 
 # ── 6. Elastic Net ────────────────────────────────────────────────────────────
-cat("[3/7] Elastic Net...\n")
+
+## Funcion para r1
+f1Summary <- function(data, lev = NULL, model = NULL) {
+  # Matriz de confusión
+  cm <- caret::confusionMatrix(data$pred, data$obs, positive = lev[2])
+  precision <- cm$byClass["Precision"]
+  recall    <- cm$byClass["Recall"]
+  f1 <- 2 * (precision * recall) / (precision + recall)
+  c(F1 = f1)
+}
+
+
+ctrl <- trainControl(
+  method          = "cv",
+  number          = 5,
+  classProbs      = TRUE,
+  summaryFunction = f1Summary,
+  sampling        = "rose",
+  savePredictions = "final",
+  verboseIter     = FALSE
+)
+
+# 
+# ctrl <- trainControl(
+#   method          = "cv",
+#   number          = 5,
+#   classProbs      = TRUE,
+#   summaryFunction = twoClassSummary,
+#   sampling        = "rose",
+#   savePredictions = "final",
+#   verboseIter     = FALSE
+# )
+
+
+# cat("[3/7] Elastic Net...\n")
 enet <- train(
   pobre ~ ., data = tr,
   method    = "glmnet",
-  metric    = "ROC",
+  metric    = "F1",
   trControl = ctrl,
   tuneGrid  = expand.grid(
     alpha  = c(0, 0.5, 1),
     lambda = 10^seq(-4, 0, length = 10)
   )
 )
+
+enet$bestTune
 resultados[["ElasticNet"]] <- eval_model(enet, val, "Elastic Net")
+
 
 # ── 7. CART ───────────────────────────────────────────────────────────────────
 cat("[4/7] CART...\n")
 cart <- train(
   pobre ~ ., data = tr,
   method    = "rpart",
-  metric    = "ROC",
+  metric    = "F1",
   trControl = ctrl,
   tuneGrid  = data.frame(cp = 10^seq(-5, -1, length = 10))
 )
+cart$bestTune
 resultados[["CART"]] <- eval_model(cart, val, "CART")
 
 # ── 8. Random Forest ──────────────────────────────────────────────────────────
@@ -113,7 +154,7 @@ cat("[5/7] Random Forest...\n")
 rf <- train(
   pobre ~ ., data = tr,
   method    = "ranger",
-  metric    = "ROC",
+  metric    = "F1",
   trControl = ctrl,
   tuneGrid  = expand.grid(
     mtry          = c(4, 6),
@@ -127,6 +168,8 @@ resultados[["RF"]] <- eval_model(rf, val, "Random Forest")
 # ── 9. XGBoost ────────────────────────────────────────────────────────────────
 cat("[6/7] XGBoost...\n")
 library(xgboost)
+cl <- makeCluster(4)
+registerDoParallel(cl)
 
 tr_matrix  <- tr  |> select(-pobre) |> as.matrix()
 val_matrix <- val |> select(-pobre) |> as.matrix()
@@ -136,10 +179,31 @@ val_label  <- as.integer(val$pobre == "yes")
 dtrain <- xgb.DMatrix(data = tr_matrix,  label = tr_label)
 dval   <- xgb.DMatrix(data = val_matrix, label = val_label)
 
+### F1 personalizada
+f1_eval <- function(preds, dtrain) {
+  
+  labels <- getinfo(dtrain, "label")
+  
+  preds_class <- ifelse(preds > 0.5, 1, 0)
+  
+  tp <- sum(preds_class == 1 & labels == 1)
+  fp <- sum(preds_class == 1 & labels == 0)
+  fn <- sum(preds_class == 0 & labels == 1)
+  
+  precision <- tp / (tp + fp + 1e-10)
+  recall    <- tp / (tp + fn + 1e-10)
+  
+  f1 <- 2 * precision * recall / (precision + recall + 1e-10)
+  
+  return(list(
+    metric = "F1",
+    value  = f1
+  ))
+}
+
 cv_xgb <- xgb.cv(
   params = list(
     objective        = "binary:logistic",
-    eval_metric      = "auc",
     max_depth        = 6,
     eta              = 0.1,
     subsample        = 0.8,
@@ -148,6 +212,8 @@ cv_xgb <- xgb.cv(
   data    = dtrain,
   nrounds = 200,
   nfold   = 5,
+  custom_metric = f1_eval,
+  maximize = TRUE,
   verbose = 0,
   early_stopping_rounds = 20
 )
