@@ -3,7 +3,10 @@
 #──────────────────────────────────────────────────────────────────────────────
 
 # 0. Limpiar memoria y cargar paquetes ────────────────────────────────────────
-rm(list = ls())
+
+cat("Working directory:\n")
+
+print(getwd())
 
 install.packages("doParallel")
 library(doParallel)

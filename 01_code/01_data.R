@@ -6,6 +6,7 @@ library(pacman)
 p_load(tidyverse, janitor, skimr, visdat, ggpubr, patchwork)
 
 # ── 1. Cargar datos ───────────────────────────────────────────────────────────
+cat("Working directory:\n")
 train_hh  <- read_csv("00_data/train_hogares.csv")  |> clean_names()
 train_ind <- read_csv("00_data/train_personas.csv") |> clean_names()
 test_hh   <- read_csv("00_data/test_hogares.csv")   |> clean_names()
