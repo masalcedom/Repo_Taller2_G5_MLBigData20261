@@ -8,10 +8,12 @@ cat("Working directory:\n")
 
 print(getwd())
 
-install.packages("doParallel")
-library(doParallel)
-
+#install.packages("doParallel")
+#library(doParallel)
+library(xgboost)
 library(pacman)
+install.packages("naivebayes")
+library(naivebayes)
 
 p_load(
   rio, tidyverse, janitor, skimr,
@@ -53,8 +55,8 @@ for (path in c("02_output/01_figures",
 
 
 # 2. Correr scripts ───────────────────────────────────────────────────────────
-#source("scripts/01_data.R")
-#source("scripts/02_models.R")
+source("01_code/01_data.R")
+source("01_code/02_models.R")
 #source("scripts/03_best_model.R")
 #source("scripts/04_predict.R")
 #source("scripts/05_mapas.R")

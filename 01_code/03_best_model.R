@@ -5,10 +5,11 @@
 cat("\n── Stage 3: Mejor modelo ────────────────────────────────────\n")
 
 # 0. Cargar datos y modelos ───────────────────────────────────────────────────
-train         <- read_rds("data/train_clean.rds")
-test          <- read_rds("data/test_clean.rds")
-tabla_modelos <- read_rds("models/tabla_comparativa.rds")
-xgb_model     <- xgb.load("models/xgb_model.ubj")
+train         <- read_rds("00_data/train_clean.rds")
+test          <- read_rds("00_data/test_clean.rds")
+tabla_modelos <- read_rds("02_output/03_models/tabla_comparativa.rds")
+# xgb_model     <- xgb.load("02_output/03_models/xgb_model.ubj")
+xgb_model <- readRDS("02_output/03_models/xgb_model.rds")
 
 cat("✔ Mejor modelo: XGBoost | F1 =",
     round(tabla_modelos$f1[1], 4), "\n")

@@ -168,8 +168,8 @@ resultados[["RF"]] <- eval_model(rf, val, "Random Forest")
 # ── 9. XGBoost ────────────────────────────────────────────────────────────────
 cat("[6/7] XGBoost...\n")
 # library(xgboost)
-cl <- makeCluster(4)
-registerDoParallel(cl)
+#cl <- makeCluster(4)
+#registerDoParallel(cl)
 
 tr_matrix  <- tr  |> select(-pobre) |> as.matrix()
 val_matrix <- val |> select(-pobre) |> as.matrix()
@@ -179,31 +179,10 @@ val_label  <- as.integer(val$pobre == "yes")
 dtrain <- xgb.DMatrix(data = tr_matrix,  label = tr_label)
 dval   <- xgb.DMatrix(data = val_matrix, label = val_label)
 
-### F1 personalizada
-f1_eval <- function(preds, dtrain) {
-  
-  labels <- getinfo(dtrain, "label")
-  
-  preds_class <- ifelse(preds > 0.5, 1, 0)
-  
-  tp <- sum(preds_class == 1 & labels == 1)
-  fp <- sum(preds_class == 1 & labels == 0)
-  fn <- sum(preds_class == 0 & labels == 1)
-  
-  precision <- tp / (tp + fp + 1e-10)
-  recall    <- tp / (tp + fn + 1e-10)
-  
-  f1 <- 2 * precision * recall / (precision + recall + 1e-10)
-  
-  return(list(
-    metric = "F1",
-    value  = f1
-  ))
-}
-
 cv_xgb <- xgb.cv(
   params = list(
     objective        = "binary:logistic",
+    eval_metric      = "auc",
     max_depth        = 6,
     eta              = 0.1,
     subsample        = 0.8,
@@ -212,8 +191,6 @@ cv_xgb <- xgb.cv(
   data    = dtrain,
   nrounds = 200,
   nfold   = 5,
-  custom_metric = f1_eval,
-  maximize = TRUE,
   verbose = 0,
   early_stopping_rounds = 20
 )
@@ -236,9 +213,11 @@ xgb_model <- xgb.train(
   verbose = 0
 )
 
+
 # Guardar INMEDIATAMENTE con xgb.save
 dir.create("models", showWarnings = FALSE)
-xgb.save(xgb_model, "models/xgb_model.ubj")
+xgb.save(xgb_model, "02_output/03_models/xgb_model.ubj")
+saveRDS(xgb_model, "02_output/03_models/xgb_model.rds")
 
 xgb_probs <- predict(xgb_model, dval)
 xgb_preds <- factor(ifelse(xgb_probs > 0.5, "yes", "no"),
@@ -260,13 +239,66 @@ cat(sprintf("  %-20s F1: %.4f | Prec: %.4f | Rec: %.4f | AUC: %.4f\n",
 
 # ── 10. Naive Bayes ───────────────────────────────────────────────────────────
 cat("[7/7] Naive Bayes...\n")
+library(MLmetrics)
+
+# f1Summary <- function(data, lev = NULL, model = NULL) {
+#   f1 <- F1_Score(y_pred = data$pred, y_true = data$obs, positive = lev[1])
+#   c(F1 = f1)
+#}
+ctrl <- trainControl(
+  method          = "cv",
+  number          = 5,
+  classProbs      = TRUE,
+  summaryFunction = twoClassSummary,
+  sampling        = "rose",
+  savePredictions = "final",
+  verboseIter     = FALSE
+)
+
+# ctrl <- trainControl(
+#   method = "cv",
+#   number = 5,
+#   summaryFunction = f1Summary,
+#   classProbs = TRUE
+# )
+
 nb <- train(
-  pobre ~ ., data = tr,
+  pobre ~ .,
+  data = tr,
   method    = "naive_bayes",
   metric    = "ROC",
   trControl = ctrl
 )
 resultados[["NB"]] <- eval_model(nb, val, "Naive Bayes")
+
+####__________________________________________________________
+# ##  Probar threshold
+# 
+# probs <- predict(nb, newdata = val, type = "prob")
+# p <- probs$yes
+# y_true <- val$pobre
+# thresholds <- seq(0, 1, by = 0.01)
+# 
+# f1_scores <- sapply(thresholds, function(t) {
+#   y_pred <- ifelse(p > t, "yes", "no")
+#   F1_Score(y_pred = y_pred, y_true = y_true, positive = "yes")
+# })
+# best_t <- thresholds[which.max(f1_scores)]
+# best_f1 <- max(f1_scores)
+# 
+# best_t
+# best_f1
+# y_pred_opt <- ifelse(p > best_t, "yes", "no")
+# 
+# nb_PR <- train(
+#   pobre ~ .,
+#   data = tr,
+#   method    = "naive_bayes",
+#   metric    = "ROC",
+#   trControl = ctrl
+# )
+
+####__________________________________________________________
 
 # 11. Tabla comparativa ───────────────────────────────────────────────────────
 tabla_modelos <- bind_rows(resultados) |>
@@ -288,17 +320,18 @@ tabla_modelos |>
        x = NULL, y = "Score", fill = "Metrica") +
   theme_minimal(base_size = 12)
 
-ggsave("figures/comparacion_modelos.png", width = 10, height = 6, dpi = 200)
+ggsave("02_output/01_figures/comparacion_modelos.png", width = 10, height = 6, dpi = 200)
 
 # 12. Guardar todo ─────────────────────────────────────────────────────────────
-write_rds(lpm,           "models/lpm.rds")
-write_rds(logit,         "models/logit.rds")
-write_rds(enet,          "models/enet.rds")
-write_rds(cart,          "models/cart.rds")
-write_rds(rf,            "models/rf.rds")
-write_rds(nb,            "models/nb.rds")
-write_rds(tabla_modelos, "models/tabla_comparativa.rds")
+write_rds(lpm,           "02_output/03_models/lpm.rds")
+write_rds(logit,         "02_output/03_models/logit.rds")
+write_rds(enet,          "02_output/03_models/enet.rds")
+write_rds(cart,          "02_output/03_models/cart.rds")
+write_rds(rf,            "02_output/03_models/rf.rds")
+write_rds(nb,            "02_output/03_models/nb.rds")
+write_rds(tabla_modelos, "02_output/02_tables/tabla_comparativa.rds")
 
 cat("\n✔ Stage 2 completo. Mejor modelo:",
     tabla_modelos$modelo[1], "| F1 =",
     round(tabla_modelos$f1[1], 4), "\n")
+
