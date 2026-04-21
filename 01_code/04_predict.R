@@ -27,7 +27,7 @@ test_matrix <- test_model |>
 
 dtest <- xgb.DMatrix(data = test_matrix)
 
-# 2. Predecir ─────────────────────────────────────────────────────────────────
+# 2. Predecir xgb_mobel ─────────────────────────────────────────────────────────────────
 probs_test <- predict(xgb_model, dtest)
 
 # Umbral 0.5
@@ -58,3 +58,69 @@ cat("  submissions/XGB_depth6_eta01_nrounds100_thresh05.csv\n")
 cat("  submissions/XGB_depth6_eta01_nrounds100_thresh04.csv\n")
 cat("  Sube ambos a Kaggle y compara el F1\n")
 
+# 2. Predecir CART ─────────────────────────────────────────────────────────────────
+
+test_CART <- test_model
+
+cart_model <- readRDS("02_output/03_models/cart.rds")
+preds_06 <- predict(cart_model,test_CART)
+sub_06 <- tibble(id = test$id, pobre = preds_06)  
+sub_06$pobre <- ifelse(sub_06$pobre == "yes", 1, 0) 
+cp_optimo <- cart$bestTune$cp
+# Submission CART
+write_csv(sub_06, "02_output/04_submissions/CART_CP_PR.csv")
+cat("  submissions/02_output/04_submissions/CART_CP_PR.csv\n")
+
+# 3. Predecir Logit ─────────────────────────────────────────────────────────────────
+Logit_model <- readRDS("02_output/03_models/logit.rds")
+preds_07 <- predict(Logit_model,test_model)
+sub_07 <- tibble(id = test$id, pobre = preds_07)
+sub_07$pobre <- ifelse(sub_07$pobre == "yes", 1, 0)
+write_csv(sub_07, "02_output/04_submissions/LP_ROSE.csv")
+cat("  submissions/02_output/04_submissions/LP_ROSE.csv\n")
+
+
+# 4. Predecir Ramdom Forest ─────────────────────────────────────────────────────────────────
+RF_model <- readRDS("02_output/03_models/rf.rds")
+preds_08 <- predict(RF_model,test_model)
+sub_08 <- tibble(id = test$id, pobre = preds_08)
+sub_08$pobre <- ifelse(sub_08$pobre == "yes", 1, 0)
+write_csv(sub_08, "02_output/04_submissions/RF_mtry4_size10.csv")
+  cat("  submissions/02_output/04_submissions/RF_mtry4_size10.csv\n")
+
+  
+# 4. Predecir Naive Bayes ─────────────────────────────────────────────────────────────────
+RF_model <- readRDS("02_output/03_models/rf.rds")
+preds_08 <- predict(RF_model,test_model)
+sub_08 <- tibble(id = test$id, pobre = preds_08)
+sub_08$pobre <- ifelse(sub_08$pobre == "yes", 1, 0)
+write_csv(sub_08, "02_output/04_submissions/RF_mtry4_size10.csv")
+cat("  submissions/02_output/04_submissions/RF_mtry4_size10.csv\n")
+  
+# 5. Predecir Naive Bayes ─────────────────────────────────────────────────────────────────
+nb_model <- readRDS("02_output/03_models/nb.rds")
+preds_09 <- predict(nb_model,test_model)
+sub_09 <- tibble(id = test$id, pobre = preds_09)
+sub_09$pobre <- ifelse(sub_09$pobre == "yes", 1, 0)
+write_csv(sub_09, "02_output/04_submissions/NB.csv")
+cat("  submissions/02_output/04_submissions/NB.csv\n")
+
+# 6. Predecir LPM ─────────────────────────────────────────────────────────────────
+lpm_model <- readRDS("02_output/03_models/LPM.rds")
+test_lpm <- test_model
+test_lpm$pobre <- "yes"
+test_lmp  <- test_lpm |> mutate(pobre_num = as.integer(pobre == "yes"))
+preds_10 <- predict(lpm_model,test_lpm)
+sub_10 <- tibble(id = test$id, pobre = preds_10)
+sub_10$pobre <- ifelse(sub_10$pobre > 0.5, 1, 0)
+write_csv(sub_10, "02_output/04_submissions/LPM_05.csv")
+cat("  submissions/02_output/04_submissions/LPM_05\n")
+
+# 7. Elastic NET ─────────────────────────────────────────────────────────────────
+lpm_model <- readRDS("02_output/03_models/enet.rds")
+preds_11 <- predict(lpm_model,test_lpm)
+sub_11 <- tibble(id = test$id, pobre = preds_11)
+sub_11$pobre <- ifelse(sub_11$pobre == "yes", 1, 0)
+write_csv(sub_11, "02_output/04_submissions/enet_alpha_05_lamda_00021.csv")
+cat("  submissions/02_output/04_submissions/enet_alpha_05_lamda_00021\n")
+  

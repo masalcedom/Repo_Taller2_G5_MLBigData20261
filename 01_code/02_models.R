@@ -121,7 +121,7 @@ ctrl <- trainControl(
 # )
 
 
-# cat("[3/7] Elastic Net...\n")
+cat("[3/7] Elastic Net...\n")
 enet <- train(
   pobre ~ ., data = tr,
   method    = "glmnet",
@@ -164,7 +164,7 @@ rf <- train(
   num.trees = 100
 )
 resultados[["RF"]] <- eval_model(rf, val, "Random Forest")
-
+rf$bestTune
 # ── 9. XGBoost ────────────────────────────────────────────────────────────────
 cat("[6/7] XGBoost...\n")
 # library(xgboost)
