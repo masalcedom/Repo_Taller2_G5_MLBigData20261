@@ -335,3 +335,87 @@ cat("\n✔ Stage 2 completo. Mejor modelo:",
     tabla_modelos$modelo[1], "| F1 =",
     round(tabla_modelos$f1[1], 4), "\n")
 
+
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 13. Modelos adicionales ──────────────────────────────────────────────────────
+
+
+# 13a. XGBoost con scale_pos_weight + tuning ──────────────────────────────────
+# Manejo del desbalance via pesos en lugar de ROSE
+cat("[+] XGBoost (scale_pos_weight + tuning)...\n")
+
+n_pos <- sum(tr_label == 1)
+n_neg <- sum(tr_label == 0)
+spw   <- n_neg / n_pos
+cat("  scale_pos_weight =", round(spw, 3), "\n")
+
+params_xgb_spw <- list(
+  objective         = "binary:logistic",
+  eval_metric       = "auc",
+  max_depth         = 8,
+  eta               = 0.05,
+  subsample         = 0.8,
+  colsample_bytree  = 0.8,
+  min_child_weight  = 3,
+  scale_pos_weight  = spw
+)
+
+cv_xgb_spw <- xgb.cv(
+  params  = params_xgb_spw,
+  data    = dtrain,
+  nrounds = 500,
+  nfold   = 5,
+  verbose = 0,
+  early_stopping_rounds = 25
+)
+best_nrounds_spw <- cv_xgb_spw$best_iteration
+if (length(best_nrounds_spw) == 0 || is.na(best_nrounds_spw))
+  best_nrounds_spw <- 200
+cat("  Mejor nrounds XGB-SPW:", best_nrounds_spw, "\n")
+
+xgb_spw <- xgb.train(
+  params  = params_xgb_spw,
+  data    = dtrain,
+  nrounds = best_nrounds_spw,
+  verbose = 0
+)
+
+xgb.save(xgb_spw, "02_output/03_models/xgb_spw.ubj")
+saveRDS(xgb_spw, "02_output/03_models/xgb_spw.rds")
+cat("Guardado xgb_spw.rds\n")
+
+# 13b. Random Forest con grilla amplia ────────────────────────────────────────
+cat("[+] Random Forest (grilla amplia)...\n")
+
+# Re-establecer ctrl con metrica F1 (la ultima version usaba twoClassSummary)
+ctrl <- trainControl(
+  method          = "cv",
+  number          = 5,
+  classProbs      = TRUE,
+  summaryFunction = f1Summary,
+  sampling        = "rose",
+  savePredictions = "final",
+  verboseIter     = FALSE
+)
+
+rf_wide <- train(
+  pobre ~ ., data = tr,
+  method     = "ranger",
+  metric     = "F1",
+  trControl  = ctrl,
+  tuneGrid   = expand.grid(
+    mtry          = c(6, 8, 10),
+    splitrule     = "gini",
+    min.node.size = c(5, 10)
+  ),
+  num.trees  = 300,
+  importance = "impurity"
+)
+cat("  Mejor combinacion RF wide:\n")
+print(rf_wide$bestTune)
+write_rds(rf_wide, "02_output/03_models/rf_wide.rds")
+cat("Guardado rf_wide.rds\n")
+
+cat("\Modelos adicionales entrenados.")
