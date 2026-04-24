@@ -93,7 +93,7 @@ cat("\nTop 10 variables mas importantes:\n")
 print(imp_matrix[1:min(10, nrow(imp_matrix)), c("Feature", "Gain")])
 
 # 6. Grafico: precision-recall por umbral ─────────────────────────────────────
-pr_df <- data.frame(threshold = seq(0.1, 0.9, by = 0.05)) |>
+pr_df <- data.frame(threshold = seq(0.1, 0.9, by = 0.02)) |>
   rowwise() |>
   mutate(
     pred = list(factor(ifelse(probs > threshold, "yes", "no"),
@@ -119,6 +119,9 @@ ggplot(pr_df, aes(x = threshold)) +
 
 ggsave("figures/precision_recall_threshold.png", width = 8, height = 5, dpi = 200)
 
+best_threshold_XBOOST <- pr_df[which.max(pr_df$f1), ]
+best_threshold_XBOOST <- best_threshold_XBOOST$threshold
+best_threshold_XBOOST
 cat("\n✔ Stage 3 completo. Figuras guardadas en figures/\n")
 cat("   confusion_matrix.png\n")
 cat("   curva_roc.png\n")

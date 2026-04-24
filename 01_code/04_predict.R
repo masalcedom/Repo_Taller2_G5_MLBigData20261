@@ -58,6 +58,19 @@ cat("  submissions/XGB_depth6_eta01_nrounds100_thresh05.csv\n")
 cat("  submissions/XGB_depth6_eta01_nrounds100_thresh04.csv\n")
 cat("  Sube ambos a Kaggle y compara el F1\n")
 
+## Submission umbral threshold optimo
+preds_12 <- as.integer(probs_test > best_threshold_XBOOST)
+sub_12 <- tibble(id = test$id, pobre = preds_12)
+stopifnot(nrow(sub_12) == nrow(sample_sub))
+write_csv(sub_04, "02_output/04_submissions/XGB_depth6_eta01_nrounds100_thresh_PR.csv")
+cat("  submissions/XGB_depth6_eta01_nrounds100_thresh_PR.csv\n")
+
+cat("\n✔ Stage 4 completo.\n")
+cat("  submissions/XGB_depth6_eta01_nrounds100_thresh05.csv\n")
+cat("  submissions/XGB_depth6_eta01_nrounds100_thresh04.csv\n")
+cat("  submissions/XGB_depth6_eta01_nrounds100_thresh_PR.csv\n")
+cat("  Sube ambos a Kaggle y compara el F1\n")
+
 # 2. Predecir CART ─────────────────────────────────────────────────────────────────
 
 test_CART <- test_model
