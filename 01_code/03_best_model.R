@@ -4,7 +4,7 @@
 
 cat("\n── Stage 3: Mejor modelo ────────────────────────────────────\n")
 
-# 0. Cargar datos y modelos ───────────────────────────────────────────────────
+0# 0. Cargar datos y modelos ───────────────────────────────────────────────────
 train         <- read_rds("00_data/train_clean.rds")
 test          <- read_rds("00_data/test_clean.rds")
 tabla_modelos <- read_rds("02_output/03_models/tabla_comparativa.rds")
@@ -53,7 +53,7 @@ cm$table |>
   theme_minimal(base_size = 13) +
   theme(legend.position = "none")
 
-ggsave("figures/confusion_matrix.png", width = 5, height = 4, dpi = 200)
+ggsave("02_output/01_figures/confusion_matrix.png", width = 5, height = 4, dpi = 200)
 
 # 4. Grafico: curva ROC ───────────────────────────────────────────────────────
 roc_obj <- roc(val$pobre, probs, quiet = TRUE)
@@ -73,7 +73,7 @@ ggplot(roc_df, aes(fpr, tpr)) +
        y = "Tasa de verdaderos positivos") +
   theme_minimal(base_size = 13)
 
-ggsave("figures/curva_roc.png", width = 6, height = 5, dpi = 200)
+ggsave("02_output/01_figures/curva_roc.png", width = 6, height = 5, dpi = 200)
 
 # 5. Grafico: feature importance ──────────────────────────────────────────────
 imp_matrix <- xgb.importance(model = xgb_model)
@@ -87,7 +87,7 @@ ggplot(imp_matrix[1:min(15, nrow(imp_matrix)), ],
        x = NULL, y = "Gain") +
   theme_minimal(base_size = 13)
 
-ggsave("figures/feature_importance.png", width = 8, height = 6, dpi = 200)
+ggsave("02_output/01_figures/feature_importance.png", width = 8, height = 6, dpi = 200)
 
 cat("\nTop 10 variables mas importantes:\n")
 print(imp_matrix[1:min(10, nrow(imp_matrix)), c("Feature", "Gain")])
@@ -117,7 +117,7 @@ ggplot(pr_df, aes(x = threshold)) +
        x = "Umbral de clasificacion", y = "Score", color = NULL) +
   theme_minimal(base_size = 13)
 
-ggsave("figures/precision_recall_threshold.png", width = 8, height = 5, dpi = 200)
+ggsave("02_output/01_figures/precision_recall_threshold.png", width = 8, height = 5, dpi = 200)
 
 best_threshold_XBOOST <- pr_df[which.max(pr_df$f1), ]
 best_threshold_XBOOST <- best_threshold_XBOOST$threshold
